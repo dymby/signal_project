@@ -6,12 +6,21 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.Executors;
 
+/**
+ * The {@code TcpOutputStrategy} is an output class that shares the given data in a TCP format, to a given port.
+ */
 public class TcpOutputStrategy implements OutputStrategy {
 
     private ServerSocket serverSocket;
     private Socket clientSocket;
     private PrintWriter out;
 
+    /**
+     * Starts a TCP server on the given port and listens for a single client connection.
+     * The client is accepted in a background thread to avoid blocking the main thread.
+     *
+     * @param port  the port to listen on
+     */
     public TcpOutputStrategy(int port) {
         try {
             serverSocket = new ServerSocket(port);
@@ -32,6 +41,14 @@ public class TcpOutputStrategy implements OutputStrategy {
         }
     }
 
+    /**
+     * Sends the specified data of the given patient through the TCP connection.
+     *
+     * @param patientId the ID of the patient the data belongs to
+     * @param timestamp the time of the measurement in milliseconds
+     * @param label     the type of measurement (e.g {@code "ECG"}
+     * @param data      the measurement value
+     */
     @Override
     public void output(int patientId, long timestamp, String label, String data) {
         if (out != null) {

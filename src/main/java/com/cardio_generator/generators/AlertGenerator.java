@@ -3,16 +3,34 @@ package com.cardio_generator.generators;
 import java.util.Random;
 import com.cardio_generator.outputs.OutputStrategy;
 
+/**
+ * Generates alert data for patients, simulating triggered and resolved alert
+ * events. Alert resolution has a 90% probability per cycle; triggering is
+ * modelled with a Poisson process using a configurable lambda value.
+ */
 public class AlertGenerator implements PatientDataGenerator {
     // switched to UPPER_SNAKE_CASE
     public static final Random RANDOM_GENERATOR = new Random();
     // switched to lowerCaseCamel
     private boolean[] alertStates; // false = resolved, true = pressed
 
+    /**
+     * Initializes the {@code AlertGenerator} object with a given patients count
+     *
+     * @param patientCount  the number of patients the {@code alertStates} holds
+     */
     public AlertGenerator(int patientCount) {
         alertStates = new boolean[patientCount + 1];
     }
 
+    /**
+     * Generates an alert event for the given patient. If an alert is currently active,
+     * there is a 90% chance it resolves. Otherwise, a new alert may be triggered based
+     * on a Poisson probability model.
+     *
+     * @param patientId      the ID of the patient to generate data for
+     * @param outputStrategy the output destination for the generated alert event
+     */
     @Override
     public void generate(int patientId, OutputStrategy outputStrategy) {
         try {
