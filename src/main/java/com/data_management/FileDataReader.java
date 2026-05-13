@@ -10,7 +10,7 @@ public class FileDataReader implements DataReader {
 
     String filePath;
 
-    FileDataReader(String filePath) {
+    public FileDataReader(String filePath) {
         this.filePath = filePath;
     }
 

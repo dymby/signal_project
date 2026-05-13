@@ -11,6 +11,8 @@ import com.cardio_generator.generators.BloodSaturationDataGenerator;
 import com.cardio_generator.generators.BloodLevelsDataGenerator;
 import com.cardio_generator.generators.ECGDataGenerator;
 import com.cardio_generator.outputs.*;
+import com.data_management.DataReader;
+import com.data_management.FileDataReader;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +35,7 @@ public class HealthDataSimulator {
     private static ScheduledExecutorService scheduler;
     private static OutputStrategy outputStrategy = new ConsoleOutputStrategy(); // Default output strategy
     private static final Random random = new Random();
+    private static DataReader dataReader;
 
     /**
      * Main method called, parses through the input variants, initializes the
@@ -122,6 +125,12 @@ public class HealthDataSimulator {
                         } else {
                             System.err.println("Unknown output type. Using default (console).");
                         }
+                    }
+                    break;
+                case "-outputfile":
+                    if (i + 1 < args.length) {
+                        String outputPath = args[++i];
+                        dataReader = new FileDataReader(outputPath);
                     }
                     break;
                 default:
