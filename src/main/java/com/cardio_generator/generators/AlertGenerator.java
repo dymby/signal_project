@@ -1,7 +1,11 @@
 package com.cardio_generator.generators;
 
+import java.util.List;
 import java.util.Random;
 import com.cardio_generator.outputs.OutputStrategy;
+import com.data_management.DataStorage;
+import com.data_management.Patient;
+import com.data_management.PatientRecord;
 
 /**
  * Generates alert data for patients, simulating triggered and resolved alert
@@ -38,9 +42,7 @@ public class AlertGenerator implements PatientDataGenerator {
                 if (RANDOM_GENERATOR.nextDouble() < 0.9) { // 90% chance to resolve
                     alertStates[patientId] = false;
                     // Output the alert
-                    // solved line length
-                    outputStrategy.output(patientId, System.currentTimeMillis(),
-                            "Alert", "resolved");
+                    outputStrategy.output(patientId, System.currentTimeMillis(), "Alert", "resolved");
                 }
             } else {
                 // to lowerCamelCase
@@ -51,9 +53,7 @@ public class AlertGenerator implements PatientDataGenerator {
                 if (alertTriggered) {
                     alertStates[patientId] = true;
                     // Output the alert
-                    // solved line length issues
-                    outputStrategy.output(patientId, System.currentTimeMillis(),
-                            "Alert", "triggered");
+                    outputStrategy.output(patientId, System.currentTimeMillis(), "Alert", "triggered");
                 }
             }
         } catch (Exception e) {

@@ -1,42 +1,73 @@
 package com.data_management;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.File;
+import java.io.*;
 import java.util.Scanner;
 
 public class FileDataReader implements DataReader {
 
-    String filePath;
+    String directory;
 
     public FileDataReader(String filePath) {
-        this.filePath = filePath;
+        this.directory = filePath;
     }
 
+    @Override
     public void readData(DataStorage dataStorage) throws IOException {
-        // firstly checking if the file actually exists
-        File file = new File(filePath);
-        if (!file.canRead() || file.exists()) {
-            throw new IOException("Invalid file path: " + filePath);
+        File dir = new File(directory);
+        File[] files = dir.listFiles((d, name) -> name.endsWith(".txt"));
+        if (files == null) return;
+
+        for (File file : files) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    if (line.isEmpty()) continue;
+                    parseLine(line, dataStorage);
+                }
+            }
         }
+    }
 
+    private void parseLine(String line, DataStorage dataStorage) {
         try {
-            InputStreamReader reader = new FileReader(new File(filePath));
-            Scanner scanner = new Scanner(reader);
+            int patientId = Integer.parseInt(extractValue(line, "Patient ID"));
+            long timestamp = Long.parseLong(extractValue(line, "Timestamp"));
+            String label = extractValue(line, "Label");
+            String rawData = extractValue(line, "Data");
 
-            while (scanner.hasNextLine()) {
-                int patientId = scanner.nextInt();
-                double measurementValue = scanner.nextDouble();
-                long timestamp = scanner.nextLong();
-                String recordType = scanner.next();
+            rawData = rawData.replace("%", "").trim();
 
-                dataStorage.addPatientData(patientId, measurementValue, recordType, timestamp);
+            double value;
+            if (rawData.equals("triggered")) {
+                value = 1.0;
+            } else if (rawData.equals("resolved")) {
+                value = 0.0;
+            } else {
+                value = Double.parseDouble(rawData);
             }
 
-            scanner.close();
-        } catch(Exception e) {
-            e.printStackTrace();
+            dataStorage.addPatientData(patientId, value, label, timestamp);
+
+        } catch (IllegalArgumentException e) {
+            // skip malformed lines
         }
+    }
+
+    private String extractValue(String line, String key) {
+        String search = key + ":";
+        int start = line.indexOf(search);
+        if (start == -1) throw new IllegalArgumentException("Key not found: " + key);
+        start += search.length();
+
+        int end = line.length();
+        for (int i = start; i < line.length() - 2; i++) {
+            if (line.charAt(i) == ',' && line.charAt(i+2) == ' '
+                    && Character.isUpperCase(line.charAt(i+2))) {
+                end = i;
+                break;
+            }
+        }
+        return line.substring(start, end).trim();
     }
 }
