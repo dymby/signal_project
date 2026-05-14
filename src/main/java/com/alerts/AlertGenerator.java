@@ -1,6 +1,9 @@
 package com.alerts;
 
-import com.cardio_generator.outputs.FileOutputStrategy;
+import com.alerts.factories.*;
+import com.alerts.strategies.AlertStrategy;
+import com.alerts.strategies.BloodPressureAlertStrategy;
+import com.alerts.strategies.BloodSaturationAlertStrategy;
 import com.cardio_generator.outputs.OutputStrategy;
 import com.data_management.DataStorage;
 import com.data_management.Patient;
@@ -50,13 +53,12 @@ public class AlertGenerator {
     public void evaluateData(Patient patient) {
         long now = System.currentTimeMillis();
         long tenMinutesAgo = now - 10 * 60 * 1000;
+        AlertStrategy bloodPressureAlertStrategy = new BloodPressureAlertStrategy();
+        AlertStrategy bloodSaturationAlertStrategy = new BloodSaturationAlertStrategy();
 
-        List<PatientRecord> allRecords = dataStorage.getRecords(patient.getPatientId(), 0L, now);
-
-        checkBloodPressure(patient, allRecords);
+        bloodPressureAlertStrategy.checkAlert(patient, dataStorage);
+        bloodSaturationAlertStrategy.checkAlert(patient, dataStorage);
         checkECG(patient, allRecords);
-        checkLowBloodSaturation(patient, allRecords);
-        checkRapidBloodSaturationDrop(patient, allRecords, tenMinutesAgo, now);
         checkHypotensiveHypoxemia(patient, allRecords);
         checkTriggeredAlert(patient, allRecords);
     }
@@ -78,59 +80,17 @@ public class AlertGenerator {
         );
     }
 
-    private void checkBloodPressure(Patient patient, List<PatientRecord> records) {
-        checkPressureType(patient, records, SYSTOLIC);
-        checkPressureType(patient, records, DIASTOLIC);
-    }
-
-    private void checkPressureType(Patient patient, List<PatientRecord> records, String label) {
-
-        List<PatientRecord> bloodPressure = filterLabel(records, label);
-
-        // values for Systolic Pressure
-        int thresholdMax = 180;
-        int thresholdMin = 90;
-
-        if (label.equals(DIASTOLIC)) {
-            thresholdMin = 60;
-            thresholdMax = 120;
-        }
-
-        for (int i = 0; i < bloodPressure.size(); i++) {
-
-            double v = records.get(i).getMeasurementValue();
-            if (v > thresholdMax || v < thresholdMin)
-                triggerAlert(new Alert(
-                        String.valueOf(patient.getPatientId()),
-                        "Critical BloodPressure",
-                        records.get(i).getTimestamp()
-                ));
-
-            if (i < 2) continue;
-
-            double d1 = records.get(i-1).getMeasurementValue() - records.get(i-2).getMeasurementValue();
-            double d2 = records.get(i).getMeasurementValue() - records.get(i-1).getMeasurementValue();
-
-            if ((d1 > 10 && d2 > 10) || (d1 < -10 && d2 < -10)) {
-                triggerAlert(new Alert(
-                        String.valueOf(patient.getPatientId()),
-                        "BloodPressure Trend Alert",
-                        records.get(i).getTimestamp()
-                ));
-            }
-        }
-    }
-
     private void checkRapidBloodSaturationDrop(Patient patient, List<PatientRecord> records, long startTime, long endTime) {
         List<PatientRecord> recent = filterLabel(records, SATURATION).stream()
                 .filter(r -> r.getTimestamp() >= startTime && r.getTimestamp() <= endTime)
                 .collect(Collectors.toList());
+        AlertFactory factory = new BloodPressureAlertFactory();
 
         for (int i = 1; i < recent.size(); i++) {
             double drop = recent.get(i-1).getMeasurementValue()
                     - recent.get(i).getMeasurementValue();
             if (drop >= 5.0) {
-                triggerAlert(new Alert(
+                triggerAlert(factory.createAlert(
                         String.valueOf(patient.getPatientId()),
                         "Rapid Saturation Drop",
                         recent.get(i).getTimestamp()
@@ -140,9 +100,10 @@ public class AlertGenerator {
     }
 
     private void checkLowBloodSaturation(Patient patient, List<PatientRecord> records) {
+        AlertFactory factory = new BloodSaturationAlertFactory();
         for (PatientRecord r : filterLabel(records, SATURATION)) {
             if (r.getMeasurementValue() < 92) {
-                triggerAlert(new Alert(
+                triggerAlert(factory.createAlert(
                         String.valueOf(patient.getPatientId()),
                         "Low Blood Saturation",
                         r.getTimestamp()
@@ -152,13 +113,13 @@ public class AlertGenerator {
     }
 
     private void checkHypotensiveHypoxemia(Patient patient, List<PatientRecord> records) {
+        AlertFactory factory = new HypotensiveHypoxemiaAlertFactory();
         boolean lowSat = filterLabel(records, SATURATION).stream()
                 .anyMatch(r -> r.getMeasurementValue() < 92);
         boolean lowPre = filterLabel(records, SYSTOLIC).stream()
                 .anyMatch(r -> r.getMeasurementValue() < 90);
-
         if (lowSat && lowPre) {
-            triggerAlert(new Alert(
+            triggerAlert(factory.createAlert(
                     String.valueOf(patient.getPatientId()),
                     "Hypotensive Hypoxemia Alert",
                     System.currentTimeMillis()
@@ -167,6 +128,7 @@ public class AlertGenerator {
     }
 
     private void checkECG(Patient patient, List<PatientRecord> records) {
+        AlertFactory factory = new ECGAlertFactory();
         List<PatientRecord> ecg = filterLabel(records, ECG);
         int windowSize = 10;
         if (ecg.size() <= windowSize) return;
@@ -179,7 +141,7 @@ public class AlertGenerator {
             double avg = sum / windowSize;
             double current = ecg.get(i).getMeasurementValue();
             if (avg > 0 && current > 3 * avg) {
-                triggerAlert(new Alert(
+                triggerAlert(factory.createAlert(
                         String.valueOf(patient.getPatientId()),
                         "ECG Abnormal Peak",
                         ecg.get(i).getTimestamp()
@@ -189,9 +151,10 @@ public class AlertGenerator {
     }
 
     private void checkTriggeredAlert(Patient patient, List<PatientRecord> records) {
+        AlertFactory factory = new TriggeredAlertFactory();
         for (PatientRecord r : filterLabel(records, ALERT)) {
             if (r.getMeasurementValue() == 1.0) {
-                triggerAlert(new Alert(
+                triggerAlert(factory.createAlert(
                         String.valueOf(patient.getPatientId()),
                         "Triggered Alert",
                         r.getTimestamp()
