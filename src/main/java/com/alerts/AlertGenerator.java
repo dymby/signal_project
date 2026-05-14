@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  */
 public class AlertGenerator {
     private DataStorage dataStorage;
-    private OutputStrategy outputStrategy = new FileOutputStrategy("output/alerts/");
+    private OutputStrategy outputStrategy;
 
     private static final String SATURATION = "Saturation";
     private static final String DIASTOLIC = "DiastolicPressure";
@@ -33,9 +33,11 @@ public class AlertGenerator {
      * @param dataStorage the data storage system that provides access to patient
      *                    data
      */
-    public AlertGenerator(DataStorage dataStorage) {
+    public AlertGenerator(DataStorage dataStorage, OutputStrategy outputStrategy) {
         this.dataStorage = dataStorage;
+        this.outputStrategy = outputStrategy;
     }
+
 
     /**
      * Evaluates the specified patient's data to determine if any alert conditions
@@ -49,7 +51,7 @@ public class AlertGenerator {
         long now = System.currentTimeMillis();
         long tenMinutesAgo = now - 10 * 60 * 1000;
 
-        List<PatientRecord> allRecords = patient.getRecords(0L, now);
+        List<PatientRecord> allRecords = dataStorage.getRecords(patient.getPatientId(), 0L, now);
 
         checkBloodPressure(patient, allRecords);
         checkECG(patient, allRecords);
@@ -67,7 +69,7 @@ public class AlertGenerator {
      *
      * @param alert the alert object containing details about the alert condition
      */
-    private void triggerAlert(Alert alert) {
+    protected void triggerAlert(Alert alert) {
         outputStrategy.output(
                 Integer.parseInt(alert.getPatientId()),
                 alert.getTimestamp(),
@@ -100,7 +102,7 @@ public class AlertGenerator {
             if (v > thresholdMax || v < thresholdMin)
                 triggerAlert(new Alert(
                         String.valueOf(patient.getPatientId()),
-                        "Critical BloodPressure Alert",
+                        "Critical BloodPressure",
                         records.get(i).getTimestamp()
                 ));
 

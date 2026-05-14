@@ -62,7 +62,7 @@ public class FileDataReader implements DataReader {
 
         int end = line.length();
         for (int i = start; i < line.length() - 2; i++) {
-            if (line.charAt(i) == ',' && line.charAt(i+2) == ' '
+            if (line.charAt(i) == ',' && line.charAt(i+1) == ' '
                     && Character.isUpperCase(line.charAt(i+2))) {
                 end = i;
                 break;
