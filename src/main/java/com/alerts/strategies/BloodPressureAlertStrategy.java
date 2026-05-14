@@ -18,10 +18,8 @@ public class BloodPressureAlertStrategy implements AlertStrategy {
     private static final String DIASTOLIC = "DiastolicPressure";
 
     @Override
-    public List<Alert> checkAlert(Patient patient, DataStorage dataStorage) {
+    public List<Alert> checkAlert(Patient patient, List<PatientRecord> records) {
         List<Alert> alerts = new ArrayList<>();
-        long now = System.currentTimeMillis();
-        List<PatientRecord> records = dataStorage.getRecords(patient.getPatientId(), 0L, now);
 
         checkPressure(patient, records, SYSTOLIC, 180, 90, alerts);
         checkPressure(patient, records, DIASTOLIC, 120, 60, alerts);

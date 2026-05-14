@@ -16,18 +16,12 @@ public class BloodSaturationAlertStrategy implements AlertStrategy{
     private static final String SATURATION = "Saturation";
 
     @Override
-    public List<Alert> checkAlert(Patient patient, DataStorage dataStorage) {
+    public List<Alert> checkAlert(Patient patient, List<PatientRecord> records) {
         long now = System.currentTimeMillis();
         long tenMinutesAgo = now - 10 * 60 * 1000;
         AlertFactory factory = new BloodSaturationAlertFactory();
         List<Alert> alerts = new ArrayList<>();
         String patientIdString = String.valueOf(patient.getPatientId());
-
-        List<PatientRecord> records = dataStorage.getRecords(
-                patient.getPatientId(),
-                0L,
-                now
-        );
 
         List<PatientRecord> filter = records.stream()
                 .filter(r -> r.getRecordType().equals(SATURATION))

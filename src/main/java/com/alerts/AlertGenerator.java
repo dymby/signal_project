@@ -1,9 +1,7 @@
 package com.alerts;
 
 import com.alerts.factories.*;
-import com.alerts.strategies.AlertStrategy;
-import com.alerts.strategies.BloodPressureAlertStrategy;
-import com.alerts.strategies.BloodSaturationAlertStrategy;
+import com.alerts.strategies.*;
 import com.cardio_generator.outputs.OutputStrategy;
 import com.data_management.DataStorage;
 import com.data_management.Patient;
@@ -23,7 +21,6 @@ public class AlertGenerator {
     private OutputStrategy outputStrategy;
 
     private static final String SATURATION = "Saturation";
-    private static final String DIASTOLIC = "DiastolicPressure";
     private static final String SYSTOLIC = "SystolicPressure";
     private static final String ECG = "ECG";
     private static final String ALERT = "Alert";
@@ -52,15 +49,21 @@ public class AlertGenerator {
      */
     public void evaluateData(Patient patient) {
         long now = System.currentTimeMillis();
-        long tenMinutesAgo = now - 10 * 60 * 1000;
-        AlertStrategy bloodPressureAlertStrategy = new BloodPressureAlertStrategy();
-        AlertStrategy bloodSaturationAlertStrategy = new BloodSaturationAlertStrategy();
+        List<PatientRecord> records = dataStorage.getRecords(patient.getPatientId(), 0L, now);
 
-        bloodPressureAlertStrategy.checkAlert(patient, dataStorage);
-        bloodSaturationAlertStrategy.checkAlert(patient, dataStorage);
-        checkECG(patient, allRecords);
-        checkHypotensiveHypoxemia(patient, allRecords);
-        checkTriggeredAlert(patient, allRecords);
+        List<AlertStrategy> strategies = List.of(
+                new BloodPressureAlertStrategy(),
+                new BloodSaturationAlertStrategy(),
+                new ECGAlertStrategy(),
+                new HypotensiveHypoxemiaAlertStrategy(),
+                new TriggeredAlertStrategy()
+        );
+
+        for (AlertStrategy strategy : strategies) {
+            for (Alert alert : strategy.checkAlert(patient, records)) {
+                triggerAlert(alert);
+            }
+        }
     }
 
     /**
@@ -80,92 +83,4 @@ public class AlertGenerator {
         );
     }
 
-    private void checkRapidBloodSaturationDrop(Patient patient, List<PatientRecord> records, long startTime, long endTime) {
-        List<PatientRecord> recent = filterLabel(records, SATURATION).stream()
-                .filter(r -> r.getTimestamp() >= startTime && r.getTimestamp() <= endTime)
-                .collect(Collectors.toList());
-        AlertFactory factory = new BloodPressureAlertFactory();
-
-        for (int i = 1; i < recent.size(); i++) {
-            double drop = recent.get(i-1).getMeasurementValue()
-                    - recent.get(i).getMeasurementValue();
-            if (drop >= 5.0) {
-                triggerAlert(factory.createAlert(
-                        String.valueOf(patient.getPatientId()),
-                        "Rapid Saturation Drop",
-                        recent.get(i).getTimestamp()
-                ));
-            }
-        }
-    }
-
-    private void checkLowBloodSaturation(Patient patient, List<PatientRecord> records) {
-        AlertFactory factory = new BloodSaturationAlertFactory();
-        for (PatientRecord r : filterLabel(records, SATURATION)) {
-            if (r.getMeasurementValue() < 92) {
-                triggerAlert(factory.createAlert(
-                        String.valueOf(patient.getPatientId()),
-                        "Low Blood Saturation",
-                        r.getTimestamp()
-                ));
-            }
-        }
-    }
-
-    private void checkHypotensiveHypoxemia(Patient patient, List<PatientRecord> records) {
-        AlertFactory factory = new HypotensiveHypoxemiaAlertFactory();
-        boolean lowSat = filterLabel(records, SATURATION).stream()
-                .anyMatch(r -> r.getMeasurementValue() < 92);
-        boolean lowPre = filterLabel(records, SYSTOLIC).stream()
-                .anyMatch(r -> r.getMeasurementValue() < 90);
-        if (lowSat && lowPre) {
-            triggerAlert(factory.createAlert(
-                    String.valueOf(patient.getPatientId()),
-                    "Hypotensive Hypoxemia Alert",
-                    System.currentTimeMillis()
-            ));
-        }
-    }
-
-    private void checkECG(Patient patient, List<PatientRecord> records) {
-        AlertFactory factory = new ECGAlertFactory();
-        List<PatientRecord> ecg = filterLabel(records, ECG);
-        int windowSize = 10;
-        if (ecg.size() <= windowSize) return;
-
-        for (int i = windowSize; i < ecg.size(); i++) {
-            double sum = 0;
-            for (int j = i - windowSize; j < i; j++) {
-                sum += ecg.get(j).getMeasurementValue();
-            }
-            double avg = sum / windowSize;
-            double current = ecg.get(i).getMeasurementValue();
-            if (avg > 0 && current > 3 * avg) {
-                triggerAlert(factory.createAlert(
-                        String.valueOf(patient.getPatientId()),
-                        "ECG Abnormal Peak",
-                        ecg.get(i).getTimestamp()
-                ));
-            }
-        }
-    }
-
-    private void checkTriggeredAlert(Patient patient, List<PatientRecord> records) {
-        AlertFactory factory = new TriggeredAlertFactory();
-        for (PatientRecord r : filterLabel(records, ALERT)) {
-            if (r.getMeasurementValue() == 1.0) {
-                triggerAlert(factory.createAlert(
-                        String.valueOf(patient.getPatientId()),
-                        "Triggered Alert",
-                        r.getTimestamp()
-                ));
-            }
-        }
-    }
-
-    private List<PatientRecord> filterLabel(List<PatientRecord> records, String label) {
-        return records.stream()
-                .filter(r -> r.getRecordType().equals(label))
-                .collect(Collectors.toList());
-    }
 }
