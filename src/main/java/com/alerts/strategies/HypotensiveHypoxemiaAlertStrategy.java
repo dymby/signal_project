@@ -1,15 +1,14 @@
 package com.alerts.strategies;
 
 import com.alerts.Alert;
+import com.alerts.BaseAlert;
 import com.alerts.factories.AlertFactory;
 import com.alerts.factories.HypotensiveHypoxemiaAlertFactory;
-import com.data_management.DataStorage;
 import com.data_management.Patient;
 import com.data_management.PatientRecord;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class HypotensiveHypoxemiaAlertStrategy implements AlertStrategy {
 

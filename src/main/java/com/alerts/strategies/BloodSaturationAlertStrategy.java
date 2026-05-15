@@ -1,9 +1,9 @@
 package com.alerts.strategies;
 
 import com.alerts.Alert;
+import com.alerts.BaseAlert;
 import com.alerts.factories.AlertFactory;
 import com.alerts.factories.BloodSaturationAlertFactory;
-import com.data_management.DataStorage;
 import com.data_management.Patient;
 import com.data_management.PatientRecord;
 
@@ -38,11 +38,11 @@ public class BloodSaturationAlertStrategy implements AlertStrategy{
         }
 
         List<PatientRecord> recent = filter.stream()
-                .filter(r -> r.getTimestamp() < now && r.getTimestamp() > tenMinutesAgo)
+                .filter(r -> r.getTimestamp() <= now && r.getTimestamp() >= tenMinutesAgo)
                 .collect(Collectors.toList());
 
         for (int i = 1; i < recent.size(); i++) {
-            double drop = recent.get(i).getMeasurementValue() - recent.get(i-1).getMeasurementValue();
+            double drop = recent.get(i-1).getMeasurementValue() - recent.get(i).getMeasurementValue();
             if (drop >= 5.0) {
                 alerts.add(factory.createAlert(
                         patientIdString,

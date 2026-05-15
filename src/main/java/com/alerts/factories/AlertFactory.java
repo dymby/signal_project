@@ -1,7 +1,7 @@
 package com.alerts.factories;
 
-import com.alerts.Alert;
+import com.alerts.BaseAlert;
 
 public abstract class AlertFactory {
-    public abstract Alert createAlert(String patientId, String condition, long timestamp);
+    public abstract BaseAlert createAlert(String patientId, String condition, long timestamp);
 }

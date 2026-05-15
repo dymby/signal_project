@@ -1,6 +1,6 @@
 package com.alerts;
 
-import com.alerts.factories.*;
+import com.alerts.decorators.PriorityAlertDecorator;
 import com.alerts.strategies.*;
 import com.cardio_generator.outputs.OutputStrategy;
 import com.data_management.DataStorage;
@@ -8,7 +8,6 @@ import com.data_management.Patient;
 import com.data_management.PatientRecord;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * The {@code AlertGenerator} class is responsible for monitoring patient data

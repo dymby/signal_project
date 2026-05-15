@@ -14,7 +14,7 @@ import com.alerts.AlertGenerator;
  */
 public class DataStorage {
     private Map<Integer, Patient> patientMap; // Stores patient objects indexed by their unique patient ID.
-
+    private static DataStorage instance;
     /**
      * Constructs a new instance of DataStorage, initializing the underlying storage
      * structure.
@@ -22,6 +22,20 @@ public class DataStorage {
     public DataStorage() {
         this.patientMap = new HashMap<>();
     }
+
+    /**
+     * Returns the single instance of DataStorage, creating it if necessary.
+     * Synchronized to be thread-safe since the simulator runs multiple threads.
+     *
+     * @return the singleton DataStorage instance
+     */
+    public static synchronized DataStorage getInstance() {
+        if (instance == null) {
+            instance = new DataStorage();
+        }
+        return instance;
+    }
+
 
     /**
      * Adds or updates patient data in the storage.
@@ -107,5 +121,12 @@ public class DataStorage {
         for (Patient patient : storage.getAllPatients()) {
             alertGenerator.evaluateData(patient);
         }
+    }
+
+    /**
+     * Resets the singleton instance. For testing purposes only.
+     */
+    public static void resetInstance() {
+        instance = null;
     }
 }

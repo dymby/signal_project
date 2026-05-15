@@ -62,12 +62,11 @@ class AlertGeneratorTest {
 
     @BeforeEach
     void setUp() {
-        storage = new DataStorage();
+        DataStorage.resetInstance();
+        storage = DataStorage.getInstance();
         outputStrategy = new CapturingOutputStrategy();
         generator = new AlertGenerator(storage, outputStrategy);
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private void add(int patientId, double value, String label, long timestamp) {
         storage.addPatientData(patientId, value, label, timestamp);
@@ -79,8 +78,6 @@ class AlertGeneratorTest {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Patient not found: " + patientId));
     }
-
-    // ── triggerAlert output format ────────────────────────────────────────────
 
     @Test
     void testTriggerAlert_outputLabelIsAlert() {
@@ -104,8 +101,6 @@ class AlertGeneratorTest {
         generator.evaluateData(patient(1));
         assertTrue(outputStrategy.hasCondition("Critical BloodPressure"));
     }
-
-    // ── Blood Pressure: Trend ─────────────────────────────────────────────────
 
     @Test
     void testBP_systolicIncreasingTrend_triggersAlert() {
@@ -170,8 +165,6 @@ class AlertGeneratorTest {
         generator.evaluateData(patient(1));
         assertFalse(outputStrategy.hasCondition("BloodPressure Trend Alert"));
     }
-
-    // ── Blood Pressure: Critical Threshold ───────────────────────────────────
 
     @Test
     void testBP_systolicAbove180_triggersAlert() {
@@ -243,8 +236,6 @@ class AlertGeneratorTest {
         assertFalse(outputStrategy.hasCondition("Critical BloodPressure"));
     }
 
-    // ── Saturation: Low ───────────────────────────────────────────────────────
-
     @Test
     void testSaturation_below92_triggersAlert() {
         add(1, 91.0, "Saturation", T1);
@@ -265,8 +256,6 @@ class AlertGeneratorTest {
         generator.evaluateData(patient(1));
         assertFalse(outputStrategy.hasCondition("Low Blood Saturation"));
     }
-
-    // ── Saturation: Rapid Drop ────────────────────────────────────────────────
 
     @Test
     void testSaturation_rapidDropOf5_within10min_triggersAlert() {
@@ -305,8 +294,6 @@ class AlertGeneratorTest {
         assertFalse(outputStrategy.hasCondition("Rapid Saturation Drop"));
     }
 
-    // ── Combined: Hypotensive Hypoxemia ──────────────────────────────────────
-
     @Test
     void testHypotensiveHypoxemia_bothConditions_triggersAlert() {
         add(1, 85.0, "SystolicPressure", T1); // systolic < 90
@@ -338,8 +325,6 @@ class AlertGeneratorTest {
         generator.evaluateData(patient(1));
         assertFalse(outputStrategy.hasCondition("Hypotensive Hypoxemia Alert"));
     }
-
-    // ── ECG: Abnormal Peak ────────────────────────────────────────────────────
 
     @Test
     void testECG_hugePeak_triggersAlert() {
@@ -383,8 +368,6 @@ class AlertGeneratorTest {
         assertFalse(outputStrategy.hasCondition("ECG Abnormal Peak"));
     }
 
-    // ── Triggered (Button) Alert ──────────────────────────────────────────────
-
     @Test
     void testTriggeredAlert_triggered_encodedAs1_triggersAlert() {
         // FileDataReader encodes "triggered" as 1.0
@@ -400,8 +383,6 @@ class AlertGeneratorTest {
         generator.evaluateData(patient(1));
         assertFalse(outputStrategy.hasCondition("Triggered Alert"));
     }
-
-    // ── Edge cases ────────────────────────────────────────────────────────────
 
     @Test
     void testEvaluateData_noRecords_noAlerts() {

@@ -15,10 +15,9 @@ class DataStorageTest {
 
     @BeforeEach
     void setUp() {
-        storage = new DataStorage();
+        DataStorage.resetInstance();
+        storage = DataStorage.getInstance();
     }
-
-    // ── addPatientData / getRecords ───────────────────────────────────────────
 
     @Test
     void testAddAndRetrieve_singleRecord() {
@@ -90,8 +89,6 @@ class DataStorageTest {
         storage.addPatientData(1, 122.0, "SystolicPressure", 2000L);
         assertEquals(1, storage.getAllPatients().size());
     }
-
-    // ── getAllPatients ─────────────────────────────────────────────────────────
 
     @Test
     void testGetAllPatients_returnsAllPatients() {

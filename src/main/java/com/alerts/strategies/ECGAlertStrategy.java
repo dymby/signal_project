@@ -1,9 +1,9 @@
 package com.alerts.strategies;
 
 import com.alerts.Alert;
+import com.alerts.BaseAlert;
 import com.alerts.factories.AlertFactory;
 import com.alerts.factories.ECGAlertFactory;
-import com.data_management.DataStorage;
 import com.data_management.Patient;
 import com.data_management.PatientRecord;
 
@@ -25,7 +25,7 @@ public class ECGAlertStrategy implements AlertStrategy{
                 .filter(r -> r.getRecordType().equals(ECG))
                 .collect(Collectors.toList());
 
-        if (filter.size() <= windowSize) return null;
+        if (filter.size() <= windowSize) return alerts;
 
         for (int i = windowSize; i < filter.size(); i++) {
             double sum = 0;

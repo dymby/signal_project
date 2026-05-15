@@ -22,8 +22,9 @@ class FileDataReaderTest {
 
     @BeforeEach
     void setUp() throws IOException {
+        DataStorage.resetInstance();
         tempDir = Files.createTempDirectory("test_output");
-        storage = new DataStorage();
+        storage = DataStorage.getInstance();
     }
 
     @AfterEach

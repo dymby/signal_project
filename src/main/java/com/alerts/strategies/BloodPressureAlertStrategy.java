@@ -2,9 +2,9 @@ package com.alerts.strategies;
 
 
 import com.alerts.Alert;
+import com.alerts.BaseAlert;
 import com.alerts.factories.AlertFactory;
 import com.alerts.factories.BloodPressureAlertFactory;
-import com.data_management.DataStorage;
 import com.data_management.Patient;
 import com.data_management.PatientRecord;
 
@@ -53,7 +53,7 @@ public class BloodPressureAlertStrategy implements AlertStrategy {
             double d2 = records.get(i).getMeasurementValue() - records.get(i-1).getMeasurementValue();
 
             if ((d1 > 10 && d2 > 10) || (d1 < -10 && d2 < -10)) {
-                alerts.add(factory. createAlert(
+                alerts.add(factory.createAlert(
                         patientId,
                         "BloodPressure Trend Alert",
                         timestamp

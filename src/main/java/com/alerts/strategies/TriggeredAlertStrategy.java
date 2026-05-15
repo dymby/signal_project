@@ -1,6 +1,7 @@
 package com.alerts.strategies;
 
 import com.alerts.Alert;
+import com.alerts.BaseAlert;
 import com.alerts.factories.AlertFactory;
 import com.alerts.factories.TriggeredAlertFactory;
 import com.data_management.Patient;
